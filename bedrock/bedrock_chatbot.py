@@ -71,12 +71,11 @@ def render_sidebar() -> Tuple[Dict, int, str]:
         
         role_select = st.selectbox(
             'Role',
-            ["Default", "Translator", "Writer", "Custom"],
+            list(role_prompt.keys()) + ["Custom"],
             key=f"{st.session_state['widget_key']}_role_Id",
         )
         # Set the initial value of the text area based on the selected role
-        role_prompt_text = role_prompt.get(role_select, "")
-
+        role_prompt_text = "" if role_select == "Custom" else role_prompt.get(role_select, "")
         st.session_state["model_name"] = model_name_select
 
         model_config = config["models"][model_name_select]
@@ -84,7 +83,6 @@ def render_sidebar() -> Tuple[Dict, int, str]:
         system_prompt_disabled = model_config.get("system_prompt_disabled", False)
         system_prompt = st.text_area(
             "System Prompt",
-            # value=model_config.get("default_system_prompt", ""),
             value = role_prompt_text,
             key=f"{st.session_state['widget_key']}_System_Prompt",
             disabled=system_prompt_disabled,
