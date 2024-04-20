@@ -1,2 +1,4 @@
 .venv
 bedrock/.env
+bedrock/__pycache__/*
+launch.json
