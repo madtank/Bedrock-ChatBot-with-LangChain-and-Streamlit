@@ -14,7 +14,7 @@ from langchain_community.embeddings import BedrockEmbeddings
 from langchain_community.vectorstores import FAISS
 from PIL import Image, UnidentifiedImageError
 import pdfplumber
-
+import os
 
 from config import config
 from models import ChatModel
@@ -51,6 +51,33 @@ class StreamHandler(BaseCallbackHandler):
         self.text += token
         self.container.markdown(self.text)
 
+# Function to extract text from uploaded files
+def extract_text_from_files(uploaded_files):
+    extracted_texts = []
+    for uploaded_file in uploaded_files:
+        if uploaded_file.type == 'application/pdf':
+            with pdfplumber.open(uploaded_file) as pdf:
+                pages_text = [page.extract_text() for page in pdf.pages]
+            extracted_texts.append('\n'.join(filter(None, pages_text)))
+        elif uploaded_file.type in ['text/plain', 'text/csv', 'text/x-python-script']:
+            # Assuming the file is encoded in UTF-8, but this may need to be adjusted based on the files you expect
+            try:
+                text = uploaded_file.getvalue().decode('utf-8')
+                extracted_texts.append(text)
+            except UnicodeDecodeError:
+                st.error(f"Error decoding {uploaded_file.name}. Please ensure it is encoded in UTF-8.")
+    return extracted_texts
+
+# Function to embed text using BedrockEmbeddings and update vectorstore
+def embed_text_and_update_vectorstore(texts, vectorstore_path="vectorstore"):
+    embeddings_model = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0")
+    if os.path.exists(vectorstore_path):
+        vectorstore = FAISS.load_local(vectorstore_path)
+    else:
+        vectorstore = FAISS(embeddings_model)
+    for text in texts:
+        vectorstore.add_documents([text])
+    vectorstore.save_local(vectorstore_path)
 
 def set_page_config() -> None:
     """
@@ -368,7 +395,7 @@ def display_uploaded_files(
 
 def rag_search(prompt: str) -> str:
     # Initialize Bedrock embeddings
-    embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0")
+    embeddings_model = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0")
 
     # Set the path to the directory containing the FAISS index file
     index_directory = "faiss_index"
@@ -377,7 +404,7 @@ def rag_search(prompt: str) -> str:
     allow_dangerous = True
 
     # Load the FAISS index from the directory
-    db = FAISS.load_local(index_directory, embeddings, allow_dangerous_deserialization=allow_dangerous)
+    db = FAISS.load_local(index_directory, embeddings_model, allow_dangerous_deserialization=allow_dangerous)
 
     # Perform the search
     docs = db.similarity_search(prompt)
@@ -425,6 +452,11 @@ def main() -> None:
         key=st.session_state["file_uploader_key"],
         disabled=image_upload_disabled,
     )
+
+    # Extract text from uploaded files and embed it
+    extracted_texts = extract_text_from_files(uploaded_files)
+    if extracted_texts:
+        embed_text_and_update_vectorstore(extracted_texts)
 
     # Display chat messages
     display_chat_messages(uploaded_files)
