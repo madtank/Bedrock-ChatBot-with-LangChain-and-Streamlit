@@ -1,11 +1,11 @@
-# filename: index_files.py  
+# filename: bedrock_embedder.py  
 import streamlit as st  
 import numpy as np  
 import os  
 from langchain_community.vectorstores import FAISS  
 from langchain_community.embeddings import BedrockEmbeddings  
 from langchain_text_splitters import RecursiveCharacterTextSplitter  
-import PyPDF2  
+import PyPDF2
 
 # Create a global variable for the embeddings
 EMBEDDINGS = BedrockEmbeddings(model_id="cohere.embed-english-v3")  
@@ -61,8 +61,19 @@ def search_index(index_path):
 
 def main():  
     index_path = "faiss_index"  
-    uploaded_files = st.file_uploader("Choose files", accept_multiple_files=True)  
-  
+
+    # Initialize session state
+    if "files_indexed" not in st.session_state:
+        st.session_state["files_indexed"] = False
+
+    # Display file uploader only if files have not been indexed
+    if not st.session_state["files_indexed"]:
+        uploaded_files = st.file_uploader("Choose files", accept_multiple_files=True)
+    else:
+        uploaded_files = None
+        if st.button("Clear Uploaded Files"):
+            st.session_state["files_indexed"] = False
+
     if st.button("Index Files"):  
         if uploaded_files:  
             docs, combined_embeddings = index_file(uploaded_files)  
@@ -76,6 +87,9 @@ def main():
                 vectorstore = FAISS.from_documents(docs, EMBEDDINGS)  
                 vectorstore.save_local(index_path)  
             st.success(f"{len(uploaded_files)} files indexed. Total documents in index: {vectorstore.index.ntotal}")  
+
+            # Set files_indexed to True after indexing
+            st.session_state["files_indexed"] = True
         else:  
             st.error("Please upload files before indexing.")  
   
