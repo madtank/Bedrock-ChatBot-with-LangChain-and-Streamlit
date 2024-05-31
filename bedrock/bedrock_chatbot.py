@@ -15,6 +15,7 @@ from langchain_community.vectorstores import FAISS
 from PIL import Image, UnidentifiedImageError
 import pdfplumber
 
+from bedrock_embedder import rag_search  # Import rag_search from bedrock_embedder.py
 
 from config import config
 from models import ChatModel
@@ -65,7 +66,6 @@ def render_sidebar() -> Tuple[Dict, int, str]:
     Render the sidebar UI and return the inference parameters.
     """
     with st.sidebar:
-        # st.markdown("## Inference Parameters")
         model_name_select = st.selectbox(
             'Model',
             list(config["models"].keys()),
@@ -77,7 +77,6 @@ def render_sidebar() -> Tuple[Dict, int, str]:
             list(role_prompt.keys()) + ["Custom"],
             key=f"{st.session_state['widget_key']}_role_Id",
         )
-        # Set the initial value of the text area based on the selected role
         role_prompt_text = "" if role_select == "Custom" else role_prompt.get(role_select, "")
         st.session_state["model_name"] = model_name_select
 
@@ -175,7 +174,6 @@ def init_conversationchain(chat_model: ChatModel, memory_window: int) -> Convers
         prompt=CLAUDE_PROMPT,
     )
 
-    # Store LLM generated responses
     if "messages" not in st.session_state:
         st.session_state.messages = [INIT_MESSAGE]
 
@@ -366,53 +364,21 @@ def display_uploaded_files(
 
     return content_files
 
-def rag_search(prompt: str) -> str:
-    # Initialize Bedrock embeddings
-    embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0")
-
-    # Set the path to the directory containing the FAISS index file
-    index_directory = "faiss_index"
-
-    # Set allow_dangerous_deserialization to True, needed for loading the FAISS index.
-    allow_dangerous = True
-
-    # Load the FAISS index from the directory
-    db = FAISS.load_local(index_directory, embeddings, allow_dangerous_deserialization=allow_dangerous)
-
-    # Perform the search
-    docs = db.similarity_search(prompt)
-
-    # Format the results
-    rag_content = "Here are the RAG search results: \n\n<search>\n\n" + "\n\n".join(doc.page_content for doc in docs) + "\n\n</search>\n\n"
-    return rag_content + prompt
-
-def web_or_local(prompt: str, web_local_rag: str) -> str:
-    if web_local_rag == "Web":
-        search = SerpAPIWrapper()
-        search_text = search.run(prompt)
-        web_content = "Here is the web search result: \n\n<search>\n\n" + search_text + "\n\n</search>\n\n"
-        prompt = web_content + prompt
-    elif web_local_rag == "RAG":
-        prompt = rag_search(prompt)
-    return prompt
 def main() -> None:
     """
     Main function to run the Streamlit app.
     """
     set_page_config()
 
-    # Generate a unique widget key only once
     if "widget_key" not in st.session_state:
         st.session_state["widget_key"] = str(random.randint(1, 1000000))
 
-    # Add a button to start a new chat
     st.sidebar.button("New Chat", on_click=new_chat, type="primary")
 
     model_kwargs, memory_window, web_local = render_sidebar()
     chat_model = ChatModel(st.session_state["model_name"], model_kwargs)
     conv_chain = init_conversationchain(chat_model, memory_window)
 
-    # Image uploader
     if "file_uploader_key" not in st.session_state:
         st.session_state["file_uploader_key"] = 0
 
@@ -426,13 +392,10 @@ def main() -> None:
         disabled=image_upload_disabled,
     )
 
-    # Display chat messages
     display_chat_messages(uploaded_files)
 
-    # User-provided prompt
     prompt = st.chat_input()
 
-    # Get images from previous messages
     message_images_list = [
         image_id
         for message in st.session_state.messages
@@ -442,7 +405,6 @@ def main() -> None:
         for image_id in message["images"]
     ]
 
-    # Show image in corresponding chat box
     uploaded_file_ids = []
     if uploaded_files and len(message_images_list) < len(uploaded_files):
         with st.chat_message("user"):
@@ -453,7 +415,6 @@ def main() -> None:
             if prompt:
                 context_text = ""
                 context_image = []
-                prompt = web_or_local(prompt, web_local)
                 for content_file in content_files:
                     if content_file['type'] == 'text':
                         context_text += content_file['text'] + "\n\n"
@@ -472,18 +433,15 @@ def main() -> None:
                 st.markdown(prompt)
 
     elif prompt:
-        prompt = web_or_local(prompt, web_local)
         formatted_prompt = chat_model.format_prompt(prompt)
         st.session_state.messages.append({"role": "user", "content": formatted_prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-    # Modify langchain_messages format
     st.session_state["langchain_messages"] = langchain_messages_format(
         st.session_state["langchain_messages"]
     )
 
-    # Generate a new response if last message is not from assistant
     if st.session_state.messages[-1]["role"] != "assistant":
         with st.chat_message("assistant"):
             response = generate_response(

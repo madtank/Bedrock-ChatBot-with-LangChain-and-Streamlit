@@ -11,7 +11,7 @@ streamlit run bedrock/bedrock_chatbot.py
 
 We have added a new feature that allows the AI model to pull in information from a large corpus of documents, providing more detailed and accurate responses. This feature uses the RAG technique, which combines the benefits of extractive and abstractive summarization.
 
-To use the RAG feature, select 'RAG' from the 'Options' dropdown in the chatbot interface.
+To use the RAG feature, select 'RAG' from the 'Options' dropdown in the chatbot interface. When the 'RAG' option is selected, and you have uploaded a document, clicking the 'Index files' button will trigger the RAG functionality using the uploaded document. This process involves indexing the document and using it to enhance the chatbot's responses with information retrieved from the document.
 
 ## Indexing Documents and Using RAG Feature
 

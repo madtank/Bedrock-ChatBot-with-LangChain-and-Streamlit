@@ -46,6 +46,7 @@ def index_file(uploaded_files=None):
         return None, None  
   
 def rag_search(prompt: str, index_path) -> list:  
+    """Perform the RAG functionality using the uploaded document."""
     allow_dangerous = True  
     db = FAISS.load_local(index_path, EMBEDDINGS, allow_dangerous_deserialization=allow_dangerous)  
     docs = db.similarity_search(prompt, k=5)  
