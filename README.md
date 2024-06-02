@@ -17,6 +17,10 @@ Moreover, you can continually add more documents to the existing index, making t
 
 To use the enhanced RAG feature, select 'RAG' from the 'Options' dropdown in the chatbot interface, and follow the prompts to upload and index your documents.
 
+![Index the uploaded files](./images/Index_files_RAG.png)
+
+![Search using RAG](./images/search_RAG.png)
+
 ## Indexing Documents and Using RAG Feature
 
 To use the RAG (Retrieval-Augmented Generation) feature, you need to index your documents using the `bedrock_indexer.py` script. This script creates a FAISS index from the documents in a directory.
