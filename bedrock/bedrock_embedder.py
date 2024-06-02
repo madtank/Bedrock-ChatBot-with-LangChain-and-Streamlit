@@ -128,13 +128,25 @@ def main():
     if "search_query" not in st.session_state:  
         st.session_state["search_query"] = ""  
   
+    # Call the search_index function when the search query changes
     st.text_input("Enter your search query", key="search_query", on_change=search_index, args=(st.session_state["search_query"], index_path))
     # Create the placeholder at the point where you want the search results to appear
     placeholder = st.empty()
+
+    # Call the rag_search function and store the results in st.session_state
+    if "search_query" in st.session_state and st.session_state["search_query"]:
+        st.session_state["matching_docs"] = rag_search(st.session_state["search_query"], index_path)
+
     # Move the display of search results and indexed documents to the bottom
     if "matching_docs" in st.session_state:  
         with placeholder.container():  
-            formatted_docs = "\n\n---\n\n".join(str(doc) for doc in st.session_state['matching_docs'])
+            # Check if matching_docs is a list of lists
+            if isinstance(st.session_state['matching_docs'][0], list):
+                # Join each inner list into a string
+                formatted_docs = "\n\n---\n\n".join(' '.join(doc) for doc in st.session_state['matching_docs'])
+            else:
+                # Join the list into a string
+                formatted_docs = st.session_state['matching_docs']
             st.markdown(f"## Search Results\n\n{formatted_docs}")
 if __name__ == "__main__":  
     main()

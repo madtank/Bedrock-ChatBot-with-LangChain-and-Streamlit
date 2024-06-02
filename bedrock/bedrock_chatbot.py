@@ -10,7 +10,8 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from langchain_community.utilities import SerpAPIWrapper
+from langchain_community.tools import DuckDuckGoSearchResults
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from PIL import Image, UnidentifiedImageError
 import pdfplumber
 
@@ -377,7 +378,8 @@ def rag_search(prompt: str) -> str:
 
 def web_or_local(prompt: str, web_local_rag: str) -> str:
     if web_local_rag == "Web":
-        search = SerpAPIWrapper()
+        wrapper = DuckDuckGoSearchAPIWrapper(region="us-en", time="d", max_results=2)
+        search = DuckDuckGoSearchResults(api_wrapper=wrapper)
         search_text = search.run(prompt)
         web_content = "Here is the web search result: \n\n<search>\n\n" + search_text + "\n\n</search>\n\n"
         prompt = web_content + prompt

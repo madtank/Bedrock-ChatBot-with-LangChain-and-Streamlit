@@ -2,7 +2,7 @@ from typing import Dict, List, Union
 from config import config
 
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_community.chat_models import BedrockChat
+from langchain_aws import ChatBedrock
 
 
 class ChatModel:
@@ -10,7 +10,7 @@ class ChatModel:
         self.model_config = config["models"][model_name]
         self.model_id = self.model_config["model_id"]
         self.model_kwargs = model_kwargs
-        self.llm = BedrockChat(model_id=self.model_id, model_kwargs=model_kwargs, streaming=True)
+        self.llm = ChatBedrock(model_id=self.model_id, model_kwargs=model_kwargs, streaming=True)
 
     def format_prompt(self, prompt: str) -> Union[str, List[Dict]]:
         """
