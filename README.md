@@ -17,7 +17,7 @@ Moreover, you can continually add more documents to the existing index, making t
 
 To use the enhanced RAG feature, select 'RAG' from the 'Options' dropdown in the chatbot interface, and follow the prompts to upload and index your documents.
 
-![Index the uploaded files](./images/Index_files_RAG.png)
+![Index the uploaded files](./images/index_files_RAG.png)
 
 ![Search using RAG](./images/search_RAG.png)
 
