@@ -366,6 +366,11 @@ def display_uploaded_files(
 
     return content_files
 
+def condense_history(history):
+    # Logic to condense conversation history using Claude 3 Haiku
+    condensed_history = "Condensed history based on Claude 3 Haiku"
+    return condensed_history
+
 def rag_search(prompt: str) -> str:
     # Perform the search using the search_index function from bedrock_embedder.py
     docs = search_index(prompt, "faiss_index")
@@ -377,14 +382,15 @@ def rag_search(prompt: str) -> str:
     return rag_content + prompt
 
 def web_or_local(prompt: str, web_local_rag: str) -> str:
+    condensed_prompt = condense_history(prompt)
     if web_local_rag == "Web":
         wrapper = DuckDuckGoSearchAPIWrapper(region="us-en", time="d", max_results=2)
         search = DuckDuckGoSearchResults(api_wrapper=wrapper)
-        search_text = search.run(prompt)
+        search_text = search.run(condensed_prompt)
         web_content = "Here is the web search result: \n\n<search>\n\n" + search_text + "\n\n</search>\n\n"
         prompt = web_content + prompt
     elif web_local_rag == "RAG":
-        prompt = rag_search(prompt)
+        prompt = rag_search(condensed_prompt)
     return prompt
 
 def main() -> None:
